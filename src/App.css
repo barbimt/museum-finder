@@ -1,6 +1,65 @@
 #root {
-  max-width: 1280px;
+  width: 100%;
+  max-width: 40rem;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+.museum-search__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.museum-search__form input {
+  font: inherit;
+  padding: 0.5rem;
+}
+
+.museum-search__hint {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.museum-search__status {
+  min-height: 1.5em;
+}
+
+.museum-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.museum-results__option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.museum-results__option[aria-pressed='true'] {
+  border-color: currentColor;
+  font-weight: 600;
+}
+
+.museum-results__location {
+  font-size: 0.875rem;
+}
+
+.museum-details {
+  margin-top: 1.5rem;
 }

@@ -1,7 +1,11 @@
 import './App.css'
+import MuseumSearch from './components/MuseumSearch'
 
-function App() {
-  return <h1>Ravelin Code Test</h1>
-}
+const App = () => (
+  <main className="app">
+    <h1>Museum Search</h1>
+    <MuseumSearch />
+  </main>
+)
 
 export default App

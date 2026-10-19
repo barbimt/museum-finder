@@ -1,0 +1,48 @@
+type FeatureProperties = Record<string, string | number | undefined>
+
+export const createPhotonFeature = (properties: FeatureProperties) => ({
+  type: 'Feature',
+  properties: {
+    osm_type: 'N',
+    osm_key: 'tourism',
+    osm_value: 'museum',
+    ...properties,
+  },
+  geometry: { type: 'Point', coordinates: [0, 0] },
+})
+
+export const photonResponse = (
+  features: ReturnType<typeof createPhotonFeature>[],
+) =>
+  new Response(JSON.stringify({ type: 'FeatureCollection', features }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+export const tateModernFeature = createPhotonFeature({
+  osm_type: 'W',
+  osm_id: 1,
+  name: 'Tate Modern',
+  housenumber: '53',
+  street: 'Bankside',
+  city: 'London',
+  postcode: 'SE1 9TG',
+  country: 'United Kingdom',
+})
+
+export const tateBritainFeature = createPhotonFeature({
+  osm_type: 'W',
+  osm_id: 2,
+  name: 'Tate Britain',
+  street: 'Millbank',
+  city: 'London',
+  country: 'United Kingdom',
+})
+
+export const artGalleryFeature = createPhotonFeature({
+  osm_type: 'N',
+  osm_id: 3,
+  name: 'Art Gallery of Alberta',
+  city: 'Edmonton',
+  country: 'Canada',
+})
