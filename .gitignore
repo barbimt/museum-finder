@@ -28,6 +28,10 @@ dist-ssr/
 
 # local editor and AI tooling
 .cursor/
+.idea/
+.vscode/
+*.swp
+*~
 
 npm-debug.log*
 yarn-debug.log*
