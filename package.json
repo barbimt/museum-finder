@@ -23,6 +23,7 @@
     "*.{css,html,md,json,yml,yaml}": "prettier --write"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.104.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
