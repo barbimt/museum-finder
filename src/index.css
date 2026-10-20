@@ -1,14 +1,14 @@
 :root {
-  --color-bg: oklch(0.975 0.008 80);
-  --color-surface: oklch(0.993 0.004 80);
-  --color-text: oklch(0.24 0.01 60);
-  --color-muted: oklch(0.5 0.012 60);
-  --color-border: oklch(0.89 0.01 75);
-  --color-border-strong: oklch(0.64 0.012 70);
-  --color-accent: oklch(0.5 0.12 40);
-  --color-accent-soft: oklch(0.95 0.025 45);
-  --color-error: oklch(0.5 0.17 27);
-  --color-error-soft: oklch(0.96 0.025 27);
+  --color-bg: #faf6f1;
+  --color-surface: #fefcfa;
+  --color-text: #231e1b;
+  --color-muted: #69625d;
+  --color-border: #dfdad4;
+  --color-border-strong: #918b84;
+  --color-accent: #9a4729;
+  --color-accent-soft: #feeae1;
+  --color-error: #b02b27;
+  --color-error-soft: #ffece9;
 
   --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
   --font-sans: 'Work Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
