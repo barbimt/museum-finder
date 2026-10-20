@@ -1,37 +1,50 @@
-# Ravelin Front-End Code Test
+# Museum Finder
 
-Build a simple interface to search for museums using the Photon API.
+Search for museums and open a result to see its address. Matching places come from the public [Photon](https://photon.komoot.io/) geocoder.
 
-## User Story
+## Stack
 
-A user visits a website with an input field.
+React, TypeScript, Vite, TanStack Query, and Leaflet. Styling is custom CSS.
 
-After entering a search term, the user is presented with a list of museums to choose from. Clicking a museum in the list should select it and display the museum's full address.
+## Prerequisites
 
-The website should cache search results for five minutes. When the user enters a search term that was previously queried within the last five minutes, the page should display the cached results rather than performing a new request to the Photon API.
+Node.js and npm. The project is tested on Node.js 24.
 
-## Requirements
+## Setup
 
-- App must work as described in the User Story.
-- Showcase your CSS chops. Try and do some amount of original CSS styling.
-- Include a README alongside your code test detailing how to run it.
+```sh
+npm install
+npm run dev
+```
 
-This repo includes a basic scaffold using [vite](https://vitejs.dev/guide/) which you are welcome use as a starting point — just run `npm install` and then `npm run dev` to get started. However, if you'd prefer to use something else, feel free to use any library or framework of choice.
+The dev server prints a local URL.
 
-## Nice to haves
+## Checks
 
-- TypeScript Support
-- Unit Tests
+```sh
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test:run
+npm run build
+```
 
-## Submission
+`npm run preview` serves the production build from `dist`.
 
-- Please do not add your name, username, email address, or any other identifiable information into your code or README. We anonymise submissions prior to code review.
-- Do not use public source control (e.g. a public GitHub repository) or publish your solution online.
-- Follow the directions from the recruiter on how to submit the exercise.
+## How search works
 
-## Resources
+A search is sent after the field has at least three characters and the user has paused for 400ms. The term is trimmed, internal spaces are collapsed, and it is lowercased, so `Tate  Modern` and `tate modern` share one result.
 
-[Photon](https://photon.komoot.io/) is a free, open source geocoder using OpenStreetMap data. You are welcome to use the demo server for your project as long as the number of requests stay in a reasonable limit.
+The request is `GET https://photon.komoot.io/api/` with `osm_tag=tourism:museum` and `limit=50`. Photon does not page past 50 features. The browser call uses the `AbortSignal` from TanStack Query, so a newer term cancels the previous request.
 
-- [Photon API docs](https://github.com/komoot/photon/blob/master/docs/api-v1.md)
-- Example request: https://photon.komoot.io/api/?q=art&osm_tag=tourism:museum
+Results stay fresh for five minutes (`staleTime`). The cache keeps them for ten minutes (`gcTime`), which is long enough to show a recent term again while another search is on screen. Failed requests are not cached and are not retried automatically. The page shows an error with a Try again button, and the last successful list is not left in place after a failed search.
+
+The list shows ten museums at a time from that single response. Show more reveals the next ten. Show less returns to the first ten. A museum selected from the extra results stays visible when the list collapses.
+
+The address is a street line, then postcode, place, and country when Photon provides them. Missing parts are omitted. If Photon has no address, the details say so.
+
+When a result includes valid coordinates, a read-only Leaflet map is loaded on selection. Museums without coordinates still show their address. Map tiles and attribution come from OpenStreetMap.
+
+## Limits
+
+The app depends on the public Photon demo server and OpenStreetMap tiles. Either can be slow or unavailable. The type is loaded from Google Fonts, with Georgia and system fonts as fallbacks.
