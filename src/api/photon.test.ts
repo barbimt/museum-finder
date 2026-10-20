@@ -26,7 +26,7 @@ describe('fetchPhotonMuseums', () => {
     )
     expect(requestUrl.searchParams.get('q')).toBe('tate modern')
     expect(requestUrl.searchParams.get('osm_tag')).toBe('tourism:museum')
-    expect(requestUrl.searchParams.get('limit')).toBe('10')
+    expect(requestUrl.searchParams.get('limit')).toBe('50')
     expect(init?.signal).toBe(controller.signal)
   })
 
@@ -39,8 +39,45 @@ describe('fetchPhotonMuseums', () => {
       id: 'W1',
       name: 'Tate Modern',
       location: 'London, United Kingdom',
-      addressLines: ['53 Bankside', 'London', 'SE1 9TG', 'United Kingdom'],
+      address: {
+        street: '53 Bankside',
+        summary: 'SE1 9TG London · United Kingdom',
+      },
+      coordinates: { latitude: 51.5076, longitude: -0.0994 },
     })
+  })
+
+  it('maps GeoJSON [longitude, latitude] coordinates in the right order', async () => {
+    mockFetch().mockResolvedValue(
+      photonResponse([
+        createPhotonFeature({ osm_id: 12 }, [-73.9776, 40.7614]),
+      ]),
+    )
+
+    const [museum] = await fetchPhotonMuseums('moma')
+
+    expect(museum.coordinates).toEqual({
+      latitude: 40.7614,
+      longitude: -73.9776,
+    })
+  })
+
+  it.each([
+    ['missing', undefined],
+    ['not an array', '51.5,-0.1'],
+    ['too short', [-0.1]],
+    ['not numbers', ['-0.1', '51.5']],
+    ['null', [null, 51.5]],
+    ['latitude out of range', [-0.1, 91]],
+    ['longitude out of range', [181, 51.5]],
+  ])('omits coordinates that are %s', async (_case, coordinates) => {
+    mockFetch().mockResolvedValue(
+      photonResponse([createPhotonFeature({ osm_id: 13 }, coordinates)]),
+    )
+
+    const [museum] = await fetchPhotonMuseums('museum')
+
+    expect(museum).not.toHaveProperty('coordinates')
   })
 
   it('skips missing address parts and removes duplicate values', async () => {
@@ -60,12 +97,34 @@ describe('fetchPhotonMuseums', () => {
 
     const [museum] = await fetchPhotonMuseums('art')
 
-    expect(museum.addressLines).toEqual([
-      'Avenue des Nerviens',
-      'Bruxelles',
-      '1000',
-      'Belgique',
-    ])
+    expect(museum.address).toEqual({
+      street: 'Avenue des Nerviens',
+      summary: '1000 Bruxelles · Belgique',
+    })
+  })
+
+  it('groups a full address into a street line and a locality summary', async () => {
+    mockFetch().mockResolvedValue(
+      photonResponse([
+        createPhotonFeature({
+          osm_id: 14,
+          street: 'Via Amerigo Vespucci',
+          locality: 'Fontanini',
+          city: 'Viareggio',
+          county: 'Lucca',
+          state: 'Tuscany',
+          postcode: '55043',
+          country: 'Italy',
+        }),
+      ]),
+    )
+
+    const [museum] = await fetchPhotonMuseums('viareggio')
+
+    expect(museum.address).toEqual({
+      street: 'Via Amerigo Vespucci',
+      summary: '55043 Viareggio · Italy',
+    })
   })
 
   it('falls back to a placeholder name and an empty address', async () => {
@@ -79,7 +138,6 @@ describe('fetchPhotonMuseums', () => {
       id: 'N11',
       name: 'Unnamed museum',
       location: '',
-      addressLines: [],
     })
   })
 

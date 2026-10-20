@@ -7,7 +7,7 @@ import {
 } from '../api/museumSearchQuery'
 import {
   artGalleryFeature,
-  type createPhotonFeature,
+  createPhotonFeature,
   photonResponse,
   tateBritainFeature,
   tateModernFeature,
@@ -91,9 +91,26 @@ describe('MuseumSearch', () => {
     expect(tateModern).toHaveAttribute('aria-pressed', 'true')
     const details = screen.getByRole('region', { name: 'Tate Modern' })
     const address = details.querySelector('address')
-    expect(address?.innerHTML).toBe(
-      '53 Bankside<br>London<br>SE1 9TG<br>United Kingdom',
-    )
+    expect(address).toHaveTextContent('53 Bankside')
+    expect(address).toHaveTextContent('SE1 9TG London · United Kingdom')
+  })
+
+  it('clears the search from the field button and keeps focus there', async () => {
+    const { user, input } = setup()
+
+    expect(
+      screen.queryByRole('button', { name: 'Clear search' }),
+    ).not.toBeInTheDocument()
+
+    await user.type(input, 'es')
+
+    await user.click(screen.getByRole('button', { name: 'Clear search' }))
+
+    expect(input).toHaveValue('')
+    expect(input).toHaveFocus()
+    expect(
+      screen.queryByRole('button', { name: 'Clear search' }),
+    ).not.toBeInTheDocument()
   })
 
   it('selects a museum using the keyboard', async () => {
@@ -102,6 +119,7 @@ describe('MuseumSearch', () => {
 
     await searchAndWaitForResults(search, 'tate', 'Tate Modern')
 
+    await user.tab()
     await user.tab()
     await user.tab()
     const tateBritain = screen.getByRole('button', { name: /Tate Britain/ })
@@ -113,6 +131,123 @@ describe('MuseumSearch', () => {
     expect(
       screen.getByRole('region', { name: 'Tate Britain' }),
     ).toBeInTheDocument()
+  })
+
+  it('shows the map for the selected museum and keeps focus on the selected result', async () => {
+    mockPhoton({ tate: [tateModernFeature, tateBritainFeature] })
+    const { user, search } = setup()
+
+    await searchAndWaitForResults(search, 'tate', 'Tate Modern')
+
+    const tateModern = screen.getByRole('button', { name: /Tate Modern/ })
+    await user.click(tateModern)
+    expect(
+      screen.getByRole('figure', {
+        name: 'Map showing the location of Tate Modern',
+      }),
+    ).toBeInTheDocument()
+    expect(tateModern).toHaveFocus()
+
+    await user.click(screen.getByRole('button', { name: /Tate Britain/ }))
+
+    expect(
+      screen.getByRole('figure', {
+        name: 'Map showing the location of Tate Britain',
+      }),
+    ).toHaveTextContent('51.4910° N, 0.1275° W')
+    expect(
+      screen.queryByRole('figure', {
+        name: 'Map showing the location of Tate Modern',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not show a map for a museum without coordinates', async () => {
+    mockPhoton({ art: [artGalleryFeature] })
+    const { user, search } = setup()
+
+    await searchAndWaitForResults(search, 'art', 'Art Gallery of Alberta')
+    await user.click(
+      screen.getByRole('button', { name: /Art Gallery of Alberta/ }),
+    )
+
+    expect(
+      screen.getByRole('region', { name: 'Art Gallery of Alberta' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('figure')).not.toBeInTheDocument()
+  })
+
+  it('reveals further results from the same response and resets when the search changes', async () => {
+    const features = Array.from({ length: 21 }, (_, index) =>
+      createPhotonFeature({
+        osm_id: index + 1,
+        name: `Museum ${index + 1}`,
+      }),
+    )
+    const fetchSpy = mockPhoton({ museum: features })
+    const { user, search } = setup()
+
+    await search('museum')
+    await advanceDebounce()
+    expect(
+      await screen.findByRole('button', {
+        name: (name) => name === 'Museum 1',
+      }),
+    ).toBeInTheDocument()
+
+    const openResults = () =>
+      screen
+        .getAllByRole('button', { name: /^Museum / })
+        .filter((button) => button.closest('li')?.hasAttribute('data-open'))
+    const museum11 = () =>
+      screen.getByRole('button', {
+        name: (name) => name === 'Museum 11',
+      })
+
+    expect(openResults()).toHaveLength(10)
+    expect(museum11().closest('li')).not.toHaveAttribute('data-open')
+    expect(screen.getByRole('status')).toHaveTextContent('21 museums found')
+
+    await user.click(screen.getByRole('button', { name: 'Show more museums' }))
+    await user.click(screen.getByRole('button', { name: 'Show more museums' }))
+
+    expect(museum11().closest('li')).toHaveAttribute('data-open')
+    expect(openResults()).toHaveLength(21)
+    expect(
+      screen.queryByRole('button', { name: 'Show more museums' }),
+    ).not.toBeInTheDocument()
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: 'Show less' }))
+
+    expect(openResults()).toHaveLength(10)
+    expect(museum11().closest('li')).not.toHaveAttribute('data-open')
+    expect(
+      screen.getByRole('button', { name: 'Show more museums' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Show more museums' }))
+    await user.click(screen.getByRole('button', { name: 'Show more museums' }))
+    await user.click(
+      screen.getByRole('button', { name: (name) => name === 'Museum 21' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Show less' }))
+
+    const selected = screen.getByRole('button', {
+      name: (name) => name === 'Museum 21',
+    })
+    expect(selected).toHaveAttribute('aria-pressed', 'true')
+    expect(selected.closest('li')).toHaveAttribute('data-open')
+    expect(openResults()).toHaveLength(11)
+
+    await search('museum')
+    await advanceDebounce()
+
+    expect(openResults()).toHaveLength(10)
+    expect(
+      screen.getByRole('button', { name: 'Show more museums' }),
+    ).toBeInTheDocument()
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 
   it('shows a message when no museums match', async () => {
