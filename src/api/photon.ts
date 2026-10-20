@@ -1,7 +1,8 @@
-import type { Museum } from '../types/museum'
+import type { Coordinates, Museum, MuseumAddress } from '../types/museum'
 
 const PHOTON_API_URL = 'https://photon.komoot.io/api/'
-const MUSEUM_RESULT_LIMIT = '10'
+// The public Photon server returns at most 50 results and has no further pages.
+const MUSEUM_RESULT_LIMIT = '50'
 const UNNAMED_MUSEUM = 'Unnamed museum'
 
 type PhotonProperties = {
@@ -22,6 +23,7 @@ type PhotonProperties = {
 type PhotonFeature = {
   type: 'Feature'
   properties: PhotonProperties
+  geometry?: { coordinates?: unknown }
 }
 
 type PhotonFeatureCollection = {
@@ -29,25 +31,37 @@ type PhotonFeatureCollection = {
   features: PhotonFeature[]
 }
 
-const toAddressLines = (properties: PhotonProperties): string[] => {
-  const streetLine = [properties.housenumber, properties.street]
+const text = (value?: string): string | undefined => {
+  const trimmed = value?.trim()
+  return trimmed || undefined
+}
+
+const toAddress = (properties: PhotonProperties): MuseumAddress | undefined => {
+  const street = [text(properties.housenumber), text(properties.street)]
     .filter(Boolean)
     .join(' ')
+  const place =
+    text(properties.city) ??
+    text(properties.locality) ??
+    text(properties.county) ??
+    text(properties.state)
+  const country = text(properties.country)
+  const primary = street || place || country || ''
 
-  const parts = [
-    streetLine,
-    properties.locality,
-    properties.district,
-    properties.city,
-    properties.county,
-    properties.state,
-    properties.postcode,
-    properties.country,
+  const locality = [
+    text(properties.postcode),
+    place === primary ? undefined : place,
   ]
-    .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part))
+    .filter(Boolean)
+    .join(' ')
+  const summary = [
+    locality,
+    country && country !== primary ? country : undefined,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
-  return [...new Set(parts)]
+  return primary ? { street: primary, ...(summary && { summary }) } : undefined
 }
 
 const toLocation = (properties: PhotonProperties): string =>
@@ -55,12 +69,32 @@ const toLocation = (properties: PhotonProperties): string =>
     .filter(Boolean)
     .join(', ')
 
-const toMuseum = ({ properties }: PhotonFeature): Museum => ({
-  id: `${properties.osm_type}${properties.osm_id}`,
-  name: properties.name?.trim() || UNNAMED_MUSEUM,
-  location: toLocation(properties),
-  addressLines: toAddressLines(properties),
-})
+const isInRange = (value: unknown, limit: number): value is number =>
+  typeof value === 'number' &&
+  Number.isFinite(value) &&
+  Math.abs(value) <= limit
+
+// GeoJSON positions are ordered [longitude, latitude].
+const toCoordinates = (position: unknown): Coordinates | undefined => {
+  if (!Array.isArray(position)) return undefined
+  const [longitude, latitude] = position
+  return isInRange(latitude, 90) && isInRange(longitude, 180)
+    ? { latitude, longitude }
+    : undefined
+}
+
+const toMuseum = ({ properties, geometry }: PhotonFeature): Museum => {
+  const address = toAddress(properties)
+  const coordinates = toCoordinates(geometry?.coordinates)
+
+  return {
+    id: `${properties.osm_type}${properties.osm_id}`,
+    name: properties.name?.trim() || UNNAMED_MUSEUM,
+    location: toLocation(properties),
+    ...(address && { address }),
+    ...(coordinates && { coordinates }),
+  }
+}
 
 const isFeatureCollection = (data: unknown): data is PhotonFeatureCollection =>
   typeof data === 'object' &&
