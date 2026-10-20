@@ -95,12 +95,31 @@ describe('MuseumSearch', () => {
     expect(address).toHaveTextContent('SE1 9TG London · United Kingdom')
   })
 
+  it('clears the search from the field button and keeps focus there', async () => {
+    const { user, input } = setup()
+
+    expect(
+      screen.queryByRole('button', { name: 'Clear search' }),
+    ).not.toBeInTheDocument()
+
+    await user.type(input, 'es')
+
+    await user.click(screen.getByRole('button', { name: 'Clear search' }))
+
+    expect(input).toHaveValue('')
+    expect(input).toHaveFocus()
+    expect(
+      screen.queryByRole('button', { name: 'Clear search' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('selects a museum using the keyboard', async () => {
     mockPhoton({ tate: [tateModernFeature, tateBritainFeature] })
     const { user, search } = setup()
 
     await searchAndWaitForResults(search, 'tate', 'Tate Modern')
 
+    await user.tab()
     await user.tab()
     await user.tab()
     const tateBritain = screen.getByRole('button', { name: /Tate Britain/ })

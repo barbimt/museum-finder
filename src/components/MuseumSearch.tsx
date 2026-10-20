@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { flushSync } from 'react-dom'
@@ -23,6 +23,7 @@ const MuseumSearch = () => {
   const resultsHeadingId = useId()
   const detailsHeadingId = useId()
   const detailsRef = useRef<HTMLElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [inputValue, setInputValue] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selectedMuseumId, setSelectedMuseumId] = useState<string | null>(null)
@@ -47,7 +48,6 @@ const MuseumSearch = () => {
     },
   )
 
-  // `isError` resets to pending while a query without data refetches, so the error persists until a success.
   const hasLastFetchFailed = errorUpdatedAt > dataUpdatedAt
   const canShowData = isWaitingForDebounce
     ? isMuseumSearchFresh(dataUpdatedAt)
@@ -91,6 +91,11 @@ const MuseumSearch = () => {
     setVisibleCount(RESULTS_PAGE_SIZE)
   }
 
+  const handleClear = () => {
+    handleInputChange('')
+    inputRef.current?.focus()
+  }
+
   const handleShowMore = () => {
     setVisibleCount((count) => count + RESULTS_PAGE_SIZE)
   }
@@ -100,7 +105,6 @@ const MuseumSearch = () => {
   }
 
   const handleSelect = (museumId: string) => {
-    // Commit the new details before scrolling, so their final size is known.
     flushSync(() => setSelectedMuseumId(museumId))
     detailsRef.current?.scrollIntoView({ block: 'nearest' })
   }
@@ -118,15 +122,32 @@ const MuseumSearch = () => {
         <div className="museum-search__field">
           <Search className="museum-search__icon" size={20} strokeWidth={1.8} />
           <input
+            ref={inputRef}
             id={inputId}
-            className="museum-search__input"
-            type="search"
+            className={
+              inputValue
+                ? 'museum-search__input museum-search__input--filled'
+                : 'museum-search__input'
+            }
+            type="text"
+            role="searchbox"
+            enterKeyHint="search"
             value={inputValue}
             placeholder="Museum name or city"
             autoComplete="off"
             aria-describedby={hintId}
             onChange={(event) => handleInputChange(event.target.value)}
           />
+          {inputValue && (
+            <button
+              type="button"
+              className="museum-search__clear"
+              aria-label="Clear search"
+              onClick={handleClear}
+            >
+              <X size={18} strokeWidth={1.8} />
+            </button>
+          )}
         </div>
         <p id={hintId} className="museum-search__hint">
           Enter at least {MIN_QUERY_LENGTH} characters.
@@ -159,7 +180,6 @@ const MuseumSearch = () => {
           {showError && (
             <div role="alert" className="message message--error">
               <p>Something went wrong while searching.</p>
-              {/* aria-disabled rather than disabled, so the button keeps keyboard focus while retrying. */}
               <button
                 type="button"
                 className="button"

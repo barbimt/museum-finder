@@ -147,6 +147,10 @@
   transition: border-color var(--transition-fast);
 }
 
+.museum-search__input--filled {
+  padding-inline-end: 3rem;
+}
+
 .museum-search__input::placeholder {
   color: var(--color-muted);
 }
@@ -159,6 +163,27 @@
   outline: 3px solid var(--color-accent-soft);
   outline-offset: 0;
   border-color: var(--color-accent);
+}
+
+.museum-search__clear {
+  position: absolute;
+  inset-inline-end: var(--space-3);
+  inset-block-start: 50%;
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-muted);
+  translate: 0 -50%;
+  cursor: pointer;
+}
+
+.museum-search__clear:hover {
+  color: var(--color-text);
 }
 
 .museum-search__hint {
