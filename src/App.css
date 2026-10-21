@@ -160,7 +160,7 @@
 }
 
 .museum-search__input:focus-visible {
-  outline: 3px solid var(--color-accent-soft);
+  outline: 3px solid var(--color-accent);
   outline-offset: 0;
   border-color: var(--color-accent);
 }
