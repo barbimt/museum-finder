@@ -2,6 +2,8 @@
 
 A React application that lets users search for museums and view their addresses. Museum data comes from the [Photon API](https://photon.komoot.io/).
 
+The deployed app is at [museum-finder.vercel.app](https://museum-finder.vercel.app/).
+
 ## Tech Stack
 
 React, TypeScript, Vite, TanStack Query, Leaflet, and CSS.
