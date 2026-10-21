@@ -1,50 +1,53 @@
 # Museum Finder
 
-Search for museums and open a result to see its address. Matching places come from the public [Photon](https://photon.komoot.io/) geocoder.
+A React application that lets users search for museums and view their addresses. Museum data comes from the [Photon API](https://photon.komoot.io/).
 
-## Stack
+## Tech Stack
 
-React, TypeScript, Vite, TanStack Query, and Leaflet. Styling is custom CSS.
+React, TypeScript, Vite, TanStack Query, Leaflet, and CSS.
 
-## Prerequisites
+## Getting Started
 
-Node.js and npm. The project is tested on Node.js 24.
+**Requirements:** Node.js 24 and npm.
 
-## Setup
+Install the dependencies and start the development server:
 
-```sh
+```bash
 npm install
 npm run dev
 ```
 
-The dev server prints a local URL.
+## Testing and Build
 
-## Checks
+Run the tests:
 
-```sh
+```bash
+npm run test:run
+```
+
+Check code quality and types:
+
+```bash
 npm run format:check
 npm run lint
 npm run typecheck
-npm run test:run
-npm run build
 ```
 
-`npm run preview` serves the production build from `dist`.
+Create and preview a production build:
 
-## How search works
+```bash
+npm run build
+npm run preview
+```
 
-A search is sent after the field has at least three characters and the user has paused for 400ms. The term is trimmed, internal spaces are collapsed, and it is lowercased, so `Tate  Modern` and `tate modern` share one result.
+## How It Works
 
-The request is `GET https://photon.komoot.io/api/` with `osm_tag=tourism:museum` and `limit=50`. Photon does not page past 50 features. The browser call uses the `AbortSignal` from TanStack Query, so a newer term cancels the previous request.
+- **Search:** Users can search after entering at least three characters. Requests are delayed by 400ms to avoid unnecessary API calls.
+- **Caching:** TanStack Query keeps search results fresh for five minutes, so repeated searches can reuse cached data.
+- **Results:** The app fetches up to 50 museums and displays 10 at a time, with options to show more or fewer results.
+- **Museum details:** Selecting a museum shows its available address and a location map when coordinates are provided.
+- **Error handling:** If a request fails, users see an error message and can try again.
 
-Results stay fresh for five minutes (`staleTime`). The cache keeps them for ten minutes (`gcTime`), which is long enough to show a recent term again while another search is on screen. Failed requests are not cached and are not retried automatically. The page shows an error with a Try again button, and the last successful list is not left in place after a failed search.
+## Limitations
 
-The list shows ten museums at a time from that single response. Show more reveals the next ten. Show less returns to the first ten. A museum selected from the extra results stays visible when the list collapses.
-
-The address is a street line, then postcode, place, and country when Photon provides them. Missing parts are omitted. If Photon has no address, the details say so.
-
-When a result includes valid coordinates, a read-only Leaflet map is loaded on selection. Museums without coordinates still show their address. Map tiles and attribution come from OpenStreetMap.
-
-## Limits
-
-The app depends on the public Photon demo server and OpenStreetMap tiles. Either can be slow or unavailable. The type is loaded from Google Fonts, with Georgia and system fonts as fallbacks.
+The app uses the public Photon API and OpenStreetMap tiles, so search results and maps depend on these services being available.
