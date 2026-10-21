@@ -31,7 +31,13 @@ const LeafletMap = ({ coordinates }: LeafletMapProps) => {
         center={center}
         radius={8}
         interactive={false}
-        pathOptions={{ className: 'museum-map__marker' }}
+        pathOptions={{
+          className: 'museum-map__marker',
+          color: '#fefcfa',
+          fillColor: '#9a4729',
+          fillOpacity: 1,
+          weight: 3,
+        }}
       />
     </MapContainer>
   )
